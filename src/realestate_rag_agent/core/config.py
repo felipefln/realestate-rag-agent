@@ -19,8 +19,10 @@ class Settings(BaseSettings):
     api_title: str = "realestate-rag-agent"
     api_version: str = "0.1.0"
 
-    # Placeholders for later phases (kept optional so /health works with no config).
-    database_url: str | None = None
+    database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5544/realestate"
+    db_echo: bool = False
+
+    # Placeholders for later phases.
     openai_api_key: str | None = None
     aws_region: str = "us-east-1"
 

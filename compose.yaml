@@ -1,4 +1,20 @@
 services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: realestate
+    ports:
+      - "5544:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d realestate"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   api:
     build: .
     ports:
@@ -6,8 +22,18 @@ services:
     environment:
       APP_ENVIRONMENT: dev
       APP_DEBUG: "true"
+      APP_DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/realestate
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn realestate_rag_agent.main:app --host 0.0.0.0 --port 8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
       timeout: 3s
       retries: 5
+
+volumes:
+  pgdata:
