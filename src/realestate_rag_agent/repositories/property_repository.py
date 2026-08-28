@@ -63,6 +63,20 @@ def list_properties(
     return list(rows), int(total or 0)
 
 
+def search_by_vector(
+    session: Session,
+    embedding: list[float],
+    f: PropertyFilter,
+    *,
+    limit: int = 10,
+) -> list[tuple[Property, float]]:
+    """Nearest properties by cosine distance. Returns (property, similarity)."""
+    distance = Property.embedding.cosine_distance(embedding).label("distance")
+    stmt = _apply_filter(select(Property, distance), f).where(Property.embedding.is_not(None))
+    rows = session.execute(stmt.order_by(distance).limit(limit)).all()
+    return [(row[0], 1.0 - float(row.distance)) for row in rows]
+
+
 def create(session: Session, data: dict) -> Property:
     prop = Property(**data)
     session.add(prop)

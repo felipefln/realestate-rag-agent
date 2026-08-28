@@ -1,0 +1,43 @@
+# Baseline de qualidade da busca semântica.
+# Cada caso roda /search com o modelo real e checa uma expectativa tolerante
+# (algo sobre o top-k, não match exato).
+
+- name: sala comercial
+  query: "sala comercial para escritório"
+  top_k: 3
+  expect:
+    all_property_type: commercial
+
+- name: studio
+  query: "studio compacto e mobiliado"
+  top_k: 3
+  expect:
+    all_property_type: studio
+
+- name: casa para familia
+  query: "casa espaçosa para uma família grande"
+  top_k: 5
+  expect:
+    min_property_type:
+      type: house
+      count: 3
+
+- name: perto da universidade
+  query: "apartamento perto da UFSC e da universidade"
+  top_k: 5
+  expect:
+    neighborhood_in_top: Trindade
+
+- name: vista para o mar
+  query: "imóvel com vista para o mar"
+  top_k: 5
+  expect:
+    min_amenity:
+      amenity: "vista para o mar"
+      count: 3
+
+- name: bairro nobre
+  query: "imóvel de altíssimo padrão e luxo em Jurerê"
+  top_k: 3
+  expect:
+    neighborhood_in_top: Jurerê

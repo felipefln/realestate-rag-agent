@@ -63,3 +63,14 @@ class PropertyPage(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class SearchHitRead(BaseModel):
+    score: float
+    property: PropertyRead
+
+
+class SearchResponse(BaseModel):
+    query: str
+    count: int
+    items: list[SearchHitRead]

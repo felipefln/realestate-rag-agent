@@ -1,4 +1,4 @@
-.PHONY: install dev run lint fmt test db-up db-down migrate revision seed docker-build docker-up docker-down
+.PHONY: install dev run lint fmt test test-fast db-up db-down migrate revision seed embed docker-build docker-up docker-down
 
 install:
 	uv sync --all-groups
@@ -20,6 +20,9 @@ fmt:
 test:
 	uv run pytest -q
 
+test-fast:
+	uv run pytest -q -m "not slow"
+
 db-up:
 	docker compose up -d db
 
@@ -34,6 +37,9 @@ revision:
 
 seed:
 	uv run python -m scripts.seed_properties $(ARGS)
+
+embed:
+	uv run python -m scripts.embed_properties $(ARGS)
 
 docker-build:
 	docker compose build

@@ -6,6 +6,7 @@ from realestate_rag_agent.api.schemas import PropertyCreate, PropertyUpdate
 from realestate_rag_agent.repositories import property_repository as repo
 from realestate_rag_agent.repositories.models import Property
 from realestate_rag_agent.repositories.property_repository import PropertyFilter
+from realestate_rag_agent.services.search_service import compute_embedding
 
 
 class PropertyNotFoundError(Exception):
@@ -28,7 +29,9 @@ def list_properties(
 
 
 def create_property(session: Session, payload: PropertyCreate) -> Property:
-    return repo.create(session, payload.model_dump())
+    data = payload.model_dump()
+    data["embedding"] = compute_embedding(data["title"], data["description"])
+    return repo.create(session, data)
 
 
 def update_property(session: Session, property_id: uuid.UUID, payload: PropertyUpdate) -> Property:
@@ -36,6 +39,11 @@ def update_property(session: Session, property_id: uuid.UUID, payload: PropertyU
     changes = payload.model_dump(exclude_unset=True)
     if not changes:
         return prop
+    if "title" in changes or "description" in changes:
+        changes["embedding"] = compute_embedding(
+            changes.get("title", prop.title),
+            changes.get("description", prop.description),
+        )
     return repo.update(session, prop, changes)
 
 
