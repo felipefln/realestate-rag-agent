@@ -66,3 +66,31 @@ def client(db_session: Session) -> TestClient:
     app = create_app()
     app.dependency_overrides[get_session] = lambda: db_session
     return TestClient(app)
+
+
+@pytest.fixture
+def fake_agent_model():
+    """Install a scripted fake chat model for the agent graph.
+
+    Call the yielded function with a list of BaseMessage responses (one per
+    expected LLM turn).
+    """
+    from langchain_core.language_models.fake_chat_models import (
+        FakeMessagesListChatModel,
+    )
+
+    from realestate_rag_agent.agent import graph, llm
+
+    class ScriptedChatModel(FakeMessagesListChatModel):
+        # The scripted responses already carry tool_calls, so binding is a no-op.
+        def bind_tools(self, tools, **kwargs):
+            return self
+
+    def _install(responses: list) -> None:
+        llm.set_chat_model(ScriptedChatModel(responses=responses))
+        graph.get_agent_graph.cache_clear()
+
+    yield _install
+
+    llm.set_chat_model(None)
+    graph.get_agent_graph.cache_clear()

@@ -74,3 +74,20 @@ class SearchResponse(BaseModel):
     query: str
     count: int
     items: list[SearchHitRead]
+
+
+class AgentChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=2000)
+    thread_id: str | None = None
+
+
+class AgentToolCall(BaseModel):
+    name: str
+    args: dict
+
+
+class AgentChatResponse(BaseModel):
+    thread_id: str
+    reply: str
+    tool_calls: list[AgentToolCall]
+    properties: list[dict]

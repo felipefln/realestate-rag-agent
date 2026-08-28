@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     aws_region: str = "us-east-1"
 
+    # Agent (LangGraph + Claude).
+    agent_model: str = "claude-sonnet-5"
+    anthropic_api_key: str | None = None
+    agent_recursion_limit: int = 8
+
 
 @lru_cache
 def get_settings() -> Settings:

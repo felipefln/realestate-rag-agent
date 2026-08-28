@@ -131,6 +131,18 @@ curl -sS --get "$BASE/search" \
 echo; echo '-- /search sem q -> 422'
 curl -sS -o /dev/null -w 'HTTP %{http_code}\n' "$BASE/search"
 
+# ---------------------------------------------------------------------------
+hr "Agente (/agent/chat) — precisa de APP_ANTHROPIC_API_KEY"
+
+echo '+ message="quero um apê de até 700 mil pra alugar perto da UFSC, aceito pet"'
+curl -sS -X POST "$BASE/agent/chat" -H 'Content-Type: application/json' \
+  -d '{"message": "quero um apê de até 700 mil pra alugar perto da UFSC, aceito pet"}' \
+  | jq '{thread_id, reply, tool_calls: [.tool_calls[] | {name, args}], properties: [.properties[] | {title, neighborhood, price}]}'
+
+echo; echo '+ stream (SSE) — message="casa com piscina em Jurerê"'
+curl -sS -N -X POST "$BASE/agent/chat/stream" -H 'Content-Type: application/json' \
+  -d '{"message": "casa com piscina em Jurerê"}'
+
 hr "OpenAPI / docs"
 echo "Swagger UI:  $BASE/docs"
 echo "OpenAPI:     $BASE/openapi.json"
