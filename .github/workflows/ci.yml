@@ -8,6 +8,25 @@ on:
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
+
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: realestate
+        ports:
+          - 5544:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d realestate"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      APP_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5544/realestate
+
     steps:
       - uses: actions/checkout@v4
 
@@ -27,6 +46,12 @@ jobs:
 
       - name: Ruff (format check)
         run: uv run ruff format --check .
+
+      - name: Alembic migrations
+        run: uv run alembic upgrade head
+
+      - name: Check migrations match models
+        run: uv run alembic check
 
       - name: Pytest
         run: uv run pytest -q

@@ -14,7 +14,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # Install the project.
 COPY src ./src
-COPY README.md ./
+COPY scripts ./scripts
+COPY data ./data
+COPY README.md alembic.ini ./
+COPY migrations ./migrations
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 

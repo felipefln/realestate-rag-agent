@@ -1,4 +1,4 @@
-.PHONY: install dev lint fmt test run docker-build docker-up docker-down
+.PHONY: install dev run lint fmt test db-up db-down migrate revision seed docker-build docker-up docker-down
 
 install:
 	uv sync --all-groups
@@ -19,6 +19,21 @@ fmt:
 
 test:
 	uv run pytest -q
+
+db-up:
+	docker compose up -d db
+
+db-down:
+	docker compose down
+
+migrate:
+	uv run alembic upgrade head
+
+revision:
+	uv run alembic revision --autogenerate -m "$(m)"
+
+seed:
+	uv run python -m scripts.seed_properties $(ARGS)
 
 docker-build:
 	docker compose build
