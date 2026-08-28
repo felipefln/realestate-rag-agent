@@ -13,6 +13,9 @@ dependencies = [
     "psycopg[binary]>=3.2",
     "pgvector>=0.3",
     "alembic>=1.14",
+    "sentence-transformers>=3.3",
+    "openai>=1.55",
+    "torch>=2.2",
 ]
 
 [dependency-groups]
@@ -21,6 +24,7 @@ dev = [
     "pytest-asyncio>=0.24",
     "httpx>=0.27",
     "ruff>=0.8",
+    "pyyaml>=6.0",
 ]
 
 [build-system]
@@ -29,6 +33,16 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/realestate_rag_agent"]
+
+# On Linux, pull the CPU-only torch build (no ~5 GB CUDA payload). macOS keeps
+# the default PyPI wheel.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
 
 [tool.ruff]
 target-version = "py312"
@@ -42,3 +56,6 @@ select = ["E", "F", "I", "UP", "B", "SIM", "C4"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+    "slow: tests that load the real embedding model (deselect with '-m \"not slow\"')",
+]

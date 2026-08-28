@@ -4,6 +4,10 @@
 #   make db-up && make migrate && make seed
 #   make dev            # ou: make run
 #
+# A busca semântica (/search) precisa dos embeddings gerados:
+#
+#   make seed && make embed
+#
 # Uso:
 #   ./scripts/api_examples.sh            # roda todos os exemplos
 #   BASE=http://localhost:8000 ./scripts/api_examples.sh
@@ -103,6 +107,29 @@ curl -sS -o /dev/null -w 'HTTP %{http_code}\n' "$BASE/properties?operation=compr
 
 echo "-- limit acima do máximo (>100) -> 422"
 curl -sS -o /dev/null -w 'HTTP %{http_code}\n' "$BASE/properties?limit=999"
+
+# ---------------------------------------------------------------------------
+hr "Busca semântica (/search)"
+
+sr() {
+  curl -sS --get "$BASE/search" --data-urlencode "q=$1" --data-urlencode "limit=${2:-5}" \
+    | jq '{query, count, items: [.items[] | {score: (.score | .*1000 | round / 1000), title: .property.title, neighborhood: .property.neighborhood}]}'
+}
+
+echo '+ q="apartamento para estudante perto da UFSC"'
+sr "apartamento para estudante perto da UFSC" 3
+
+echo; echo '+ q="casa com piscina e churrasqueira para a família"'
+sr "casa com piscina e churrasqueira para a família" 3
+
+echo; echo '+ q="sala comercial para escritório" (com filtro operation=rent)'
+curl -sS --get "$BASE/search" \
+  --data-urlencode "q=sala comercial para escritório" \
+  --data-urlencode "operation=rent" --data-urlencode "limit=3" \
+  | jq '{count, items: [.items[] | {title: .property.title, operation: .property.operation}]}'
+
+echo; echo '-- /search sem q -> 422'
+curl -sS -o /dev/null -w 'HTTP %{http_code}\n' "$BASE/search"
 
 hr "OpenAPI / docs"
 echo "Swagger UI:  $BASE/docs"

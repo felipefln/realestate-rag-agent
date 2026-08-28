@@ -22,7 +22,13 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5544/realestate"
     db_echo: bool = False
 
-    # Placeholders for later phases.
+    # Embeddings. The active provider's dimension must match the `embedding`
+    # column (see EMBEDDING_DIM in repositories/models.py) — switching provider
+    # to one with a different dimension needs a new migration.
+    embedding_provider: Literal["local", "openai", "fake"] = "local"
+    embedding_model_local: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    embedding_model_openai: str = "text-embedding-3-small"
+
     openai_api_key: str | None = None
     aws_region: str = "us-east-1"
 

@@ -26,6 +26,8 @@ jobs:
 
     env:
       APP_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5544/realestate
+      APP_EMBEDDING_PROVIDER: fake
+      HF_HUB_DISABLE_TELEMETRY: "1"
 
     steps:
       - uses: actions/checkout@v4
@@ -52,6 +54,12 @@ jobs:
 
       - name: Check migrations match models
         run: uv run alembic check
+
+      - name: Cache embedding model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-${{ hashFiles('src/realestate_rag_agent/services/embeddings.py') }}
 
       - name: Pytest
         run: uv run pytest -q

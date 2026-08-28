@@ -18,7 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from realestate_rag_agent.core.db import Base
 
-EMBEDDING_DIM = 1536
+EMBEDDING_DIM = 384
 
 
 class Operation(enum.StrEnum):
@@ -77,4 +77,10 @@ class Property(Base):
         Index("ix_properties_city", "city"),
         Index("ix_properties_neighborhood", "neighborhood"),
         Index("ix_properties_price", "price"),
+        Index(
+            "ix_properties_embedding",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
     )
