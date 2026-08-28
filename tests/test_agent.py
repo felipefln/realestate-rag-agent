@@ -112,3 +112,29 @@ def test_agent_chat_stream_emits_events(client: TestClient, fake_agent_model) ->
     assert "tool_result" in types
     assert types[-1] == "done"
     assert events[-1]["thread_id"]
+
+
+def test_agent_chat_without_api_key_returns_503(client: TestClient) -> None:
+    # No fake_agent_model fixture -> the real ChatAnthropic path, which has no key.
+    resp = client.post("/agent/chat", json={"message": "oi"})
+    assert resp.status_code == 503
+    assert "ANTHROPIC_API_KEY" in resp.json()["detail"]
+
+
+def test_agent_chat_maps_llm_error_to_502(client: TestClient, monkeypatch) -> None:
+    import httpx
+    from anthropic import APIError
+
+    from realestate_rag_agent.agent import service
+
+    def boom(*_a, **_k):
+        raise APIError(
+            "credit balance too low",
+            httpx.Request("POST", "https://api.anthropic.com/v1/messages"),
+            body=None,
+        )
+
+    monkeypatch.setattr(service, "run_agent", boom)
+    resp = client.post("/agent/chat", json={"message": "oi"})
+    assert resp.status_code == 502
+    assert "credit balance" in resp.json()["detail"]

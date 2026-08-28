@@ -16,6 +16,9 @@ _TEST_URL = _BASE_URL if _BASE_URL.endswith("_test") else _BASE_URL + "_test"
 os.environ["APP_DATABASE_URL"] = _TEST_URL
 os.environ["APP_ENVIRONMENT"] = "test"
 os.environ.setdefault("APP_EMBEDDING_PROVIDER", "fake")
+# Isolate tests from a developer's .env: the agent must look unconfigured
+# unless a test installs a fake chat model.
+os.environ["APP_ANTHROPIC_API_KEY"] = ""
 
 from realestate_rag_agent.core.db import Base, get_session  # noqa: E402
 from realestate_rag_agent.main import create_app  # noqa: E402

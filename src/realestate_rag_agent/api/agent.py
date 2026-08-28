@@ -1,6 +1,7 @@
 import json
 from typing import Annotated
 
+from anthropic import APIError
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -24,6 +25,8 @@ def chat(payload: AgentChatRequest, session: SessionDep) -> AgentChatResponse:
         result = agent_service.run_agent(session, payload.message, payload.thread_id)
     except RuntimeError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+    except APIError as exc:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"LLM error: {exc}") from exc
     return AgentChatResponse(
         thread_id=result.thread_id,
         reply=result.reply,
@@ -42,7 +45,7 @@ def chat_stream(payload: AgentChatRequest, session: SessionDep) -> StreamingResp
         try:
             for event in agent_service.stream_agent(session, payload.message, payload.thread_id):
                 yield _sse(event)
-        except RuntimeError as exc:
+        except (RuntimeError, APIError) as exc:
             yield _sse({"type": "error", "message": str(exc)})
 
     return StreamingResponse(events(), media_type="text/event-stream")
