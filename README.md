@@ -10,7 +10,7 @@ e exposição via MCP.
 ## Stack
 
 Python 3.12 · [uv](https://docs.astral.sh/uv/) · FastAPI · SQLAlchemy 2 + Alembic ·
-Postgres/pgvector · sentence-transformers · pydantic-settings · Ruff · Pytest · Docker
+Postgres/pgvector · sentence-transformers · LangGraph + Claude · MCP · Ruff · Pytest · Docker
 
 ## Rodando
 
@@ -33,6 +33,22 @@ Trocar de provider com dimensão diferente exige nova migration da coluna `embed
 Testes: `make test` roda tudo; `make test-fast` pula o baseline de qualidade (`-m "not slow"`),
 que carrega o modelo real.
 
+### Agente
+
+O `/agent/chat` usa um agente LangGraph (grafo `agent ↔ tools`) com Claude via
+`langchain-anthropic`. A LLM decide entre busca semântica e filtro estruturado,
+chama as tools e redige a resposta citando só os imóveis retornados. Memória de
+conversa por `thread_id` (in-memory).
+
+Precisa de `APP_ANTHROPIC_API_KEY`. Modelo em `APP_AGENT_MODEL` (padrão
+`claude-sonnet-5`). Sem a key, os endpoints `/agent/*` retornam erro — o resto da
+API funciona normalmente. Os testes usam uma LLM fake (não gastam API).
+
+### MCP
+
+`make mcp` sobe um servidor MCP (stdio) expondo `search_properties`,
+`filter_properties` e `get_property_details` para clientes MCP (ex: Claude Desktop).
+
 ### Docker
 
 ```bash
@@ -45,6 +61,8 @@ make docker-down
 | método | rota | descrição |
 |--------|------|-----------|
 | `GET` | `/health` | healthcheck |
+| `POST` | `/agent/chat` | agente: `{message, thread_id?}` → resposta + `tool_calls` + `properties` |
+| `POST` | `/agent/chat/stream` | mesmo, via SSE (eventos `token` / `tool_call` / `tool_result` / `done`) |
 | `GET` | `/search` | busca semântica: `?q=<linguagem natural>` + mesmos filtros estruturados, retorna itens com `score` |
 | `GET` | `/properties` | lista com filtros (`operation`, `neighborhood`, `min_price`, `max_price`, `min_bedrooms`, ...) e paginação |
 | `GET` | `/properties/{id}` | detalhe |
@@ -56,12 +74,14 @@ make docker-down
 
 ```
 src/realestate_rag_agent/
-├── api/           # routers FastAPI + schemas (health, properties, search)
-├── core/          # config, conexão com o banco
-├── services/      # regras de negócio, embeddings, busca semântica
-└── repositories/  # models SQLAlchemy e acesso a dados (incl. busca vetorial)
-migrations/        # Alembic
-scripts/           # geração/seed do dataset e dos embeddings
-data/              # dataset sintético versionado (properties.json)
-tests/baseline/    # casos pergunta → expectativa da busca semântica
+├── api/            # routers FastAPI + schemas (health, properties, search, agent)
+├── agent/          # grafo LangGraph, tools, LLM, streaming
+├── core/           # config, conexão com o banco
+├── services/       # regras de negócio, embeddings, busca semântica
+├── repositories/   # models SQLAlchemy e acesso a dados (incl. busca vetorial)
+└── mcp_server.py   # servidor MCP (stdio)
+migrations/         # Alembic
+scripts/            # geração/seed do dataset e dos embeddings
+data/               # dataset sintético versionado (properties.json)
+tests/baseline/     # casos pergunta → expectativa da busca semântica
 ```

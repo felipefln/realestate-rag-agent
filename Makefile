@@ -1,4 +1,4 @@
-.PHONY: install dev run lint fmt test test-fast db-up db-down migrate revision seed embed docker-build docker-up docker-down
+.PHONY: install dev run lint fmt test test-fast db-up db-down migrate revision seed embed mcp docker-build docker-up docker-down
 
 install:
 	uv sync --all-groups
@@ -40,6 +40,9 @@ seed:
 
 embed:
 	uv run python -m scripts.embed_properties $(ARGS)
+
+mcp:
+	uv run python -m realestate_rag_agent.mcp_server
 
 docker-build:
 	docker compose build
